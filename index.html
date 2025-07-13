@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher of the Bleeding Pixels</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(45deg, #1a0a0a, #0a0a1a, #1a0a1a);
+            color: #ffccdd;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        #threejs-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.8;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            backdrop-filter: blur(2px);
+            background: rgba(26, 10, 26, 0.3);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: linear-gradient(90deg, rgba(255, 102, 153, 0.2), rgba(153, 102, 255, 0.2));
+            border-bottom: 2px solid #ff6699;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ffaacc;
+            text-shadow: 0 0 10px #ff6699;
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { text-shadow: 0 0 10px #ff6699; }
+            50% { text-shadow: 0 0 20px #ff6699, 0 0 30px #cc3366; }
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: #ddaaff;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        nav a:hover {
+            color: #ffffff;
+            border-color: #ff6699;
+            box-shadow: 0 0 15px rgba(255, 102, 153, 0.5);
+            background: rgba(255, 102, 153, 0.1);
+        }
+
+        nav a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 102, 153, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        nav a:hover::before {
+            left: 100%;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .sidebar {
+            flex: 0 0 250px;
+            background: rgba(26, 13, 26, 0.8);
+            border: 1px solid #ff6699;
+            border-radius: 10px;
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 20px rgba(255, 102, 153, 0.3);
+        }
+
+        .sidebar h3 {
+            color: #ffaacc;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.1rem;
+            text-shadow: 0 0 5px #ff6699;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: rgba(255, 102, 153, 0.1);
+            border-left: 3px solid #ff6699;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .sidebar li:hover {
+            background: rgba(255, 102, 153, 0.2);
+            transform: translateX(5px);
+            box-shadow: 0 0 10px rgba(255, 102, 153, 0.4);
+        }
+
+        .sidebar li::before {
+            content: '> ';
+            color: #ff6699;
+            font-weight: bold;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .profile-header {
+            background: linear-gradient(135deg, rgba(255, 102, 153, 0.2), rgba(153, 102, 255, 0.2));
+            border: 1px solid #ff6699;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, rgba(255, 102, 153, 0.1), transparent);
+            animation: rotate-bg 10s linear infinite;
+        }
+
+        @keyframes rotate-bg {
+            to { transform: rotate(360deg); }
+        }
+
+        .profile-header > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .profile-title {
+            font-size: 2.5rem;
+            color: #ffaacc;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 15px #ff6699;
+            animation: flicker-text 4s ease-in-out infinite;
+        }
+
+        @keyframes flicker-text {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+            75% { opacity: 0.9; }
+        }
+
+        .profile-subtitle {
+            font-size: 1.2rem;
+            color: #ddaaff;
+            margin-bottom: 1rem;
+        }
+
+        .tab-container {
+            background: rgba(26, 13, 26, 0.8);
+            border: 1px solid #ff6699;
+            border-radius: 10px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .tab-buttons {
+            display: flex;
+            background: rgba(255, 102, 153, 0.1);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem;
+            background: none;
+            border: none;
+            color: #ddaaff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            font-family: inherit;
+        }
+
+        .tab-button.active {
+            background: rgba(255, 102, 153, 0.3);
+            color: #ffffff;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 102, 153, 0.2);
+            color: #ffffff;
+        }
+
+        .tab-button::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #ff6699;
+            transition: width 0.3s ease;
+        }
+
+        .tab-button.active::after,
+        .tab-button:hover::after {
+            width: 100%;
+        }
+
+        .tab-content {
+            padding: 2rem;
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scroll-box {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ff6699;
+            border-radius: 5px;
+            padding: 1rem;
+            background: rgba(26, 10, 26, 0.5);
+            scrollbar-width: thin;
+            scrollbar-color: #ff6699 rgba(26, 10, 26, 0.5);
+        }
+
+        .scroll-box::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .scroll-box::-webkit-scrollbar-track {
+            background: rgba(26, 10, 26, 0.5);
+        }
+
+        .scroll-box::-webkit-scrollbar-thumb {
+            background: #ff6699;
+            border-radius: 4px;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .gallery-item {
+            aspect-ratio: 1;
+            background: linear-gradient(45deg, rgba(255, 102, 153, 0.3), rgba(153, 102, 255, 0.3));
+            border: 1px solid #ff6699;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(255, 102, 153, 0.5);
+        }
+
+        .gallery-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s ease;
+        }
+
+        .gallery-item:hover::before {
+            transform: translateX(100%);
+        }
+
+        .collapsible {
+            margin: 1rem 0;
+        }
+
+        .collapsible-header {
+            background: rgba(255, 102, 153, 0.2);
+            padding: 1rem;
+            cursor: pointer;
+            border: 1px solid #ff6699;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .collapsible-header:hover {
+            background: rgba(255, 102, 153, 0.3);
+            box-shadow: 0 0 10px rgba(255, 102, 153, 0.3);
+        }
+
+        .collapsible-header::after {
+            content: '+';
+            position: absolute;
+            right: 1rem;
+            font-size: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .collapsible.active .collapsible-header::after {
+            transform: rotate(45deg);
+        }
+
+        .collapsible-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: rgba(26, 10, 26, 0.5);
+            border: 1px solid #ff6699;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+
+        .collapsible.active .collapsible-content {
+            max-height: 500px;
+            padding: 1rem;
+        }
+
+        .animated-text {
+            display: inline-block;
+            animation: wave-text 2s ease-in-out infinite;
+        }
+
+        @keyframes wave-text {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(26, 13, 26, 0.95);
+            border: 2px solid #ff6699;
+            border-radius: 15px;
+            padding: 2rem;
+            z-index: 1000;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+            max-width: 90%;
+            max-height: 90%;
+            overflow-y: auto;
+        }
+
+        .popup.active {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .close-popup {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            color: #ff6699;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .close-popup:hover {
+            color: #ffffff;
+        }
+
+        footer {
+            background: linear-gradient(90deg, rgba(255, 102, 153, 0.2), rgba(153, 102, 255, 0.2));
+            border-top: 2px solid #ff6699;
+            padding: 2rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .footer-section h4 {
+            color: #ffaacc;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 5px #ff6699;
+        }
+
+        .footer-section a {
+            color: #ddaaff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section a:hover {
+            color: #ffffff;
+            text-shadow: 0 0 5px #ff6699;
+        }
+
+        .blood-drop {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff6699;
+            border-radius: 50%;
+            animation: blood-fall 3s linear infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes blood-fall {
+            0% {
+                transform: translateY(-100vh);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                flex: none;
+                width: 100%;
+            }
+            
+            nav ul {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+            
+            .profile-title {
+                font-size: 2rem;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        .glitch-text {
+            position: relative;
+            color: #ffaacc;
+            animation: glitch 2s linear infinite;
+        }
+
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        .matrix-rain {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -2;
+        }
+
+        .btn-mystical {
+            background: linear-gradient(45deg, rgba(255, 102, 153, 0.3), rgba(153, 102, 255, 0.3));
+            border: 1px solid #ff6699;
+            color: #ffffff;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+            margin: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-mystical:hover {
+            background: linear-gradient(45deg, rgba(255, 102, 153, 0.5), rgba(153, 102, 255, 0.5));
+            box-shadow: 0 0 15px rgba(255, 102, 153, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .scrolling-text {
+            white-space: nowrap;
+            overflow: hidden;
+            animation: scroll-text 15s linear infinite;
+            background: rgba(255, 102, 153, 0.1);
+            padding: 0.5rem;
+            border-left: 3px solid #ff6699;
+            margin: 1rem 0;
+        }
+
+        @keyframes scroll-text {
+            from { transform: translateX(100%); }
+            to { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="threejs-canvas"></canvas>
+    
+    <div class="container">
+        <header>
+            <div class="logo glitch-text">∀ CIPHER OF FLESH ∀</div>
+            <nav>
+                <ul>
+                    <li><a href="#home">NEXUS</a></li>
+                    <li><a href="#about">ESSENCE</a></li>
+                    <li><a href="#projects">MANIFESTATIONS</a></li>
+                    <li><a href="#contact">COMMUNION</a></li>
+                    <li><a href="#" onclick="openPopup()">REVELATION</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div class="main-content">
+            <aside class="sidebar">
+                <h3>◊ ETHEREAL FRAGMENTS ◊</h3>
+                <ul>
+                    <li onclick="scrollToSection('about')">Blood Memories</li>
+                    <li onclick="scrollToSection('skills')">Digital Incantations</li>
+                    <li onclick="scrollToSection('experience')">Temporal Scars</li>
+                    <li onclick="scrollToSection('projects')">Pixel Prophecies</li>
+                    <li onclick="scrollToSection('gallery')">Visual Transmissions</li>
+                    <li onclick="scrollToSection('testimonials')">Echo Chambers</li>
+                    <li onclick="scrollToSection('contact')">Soul Interface</li>
+                </ul>
+            </aside>
+
+            <main class="content-area">
+                <section class="profile-header">
+                    <h1 class="profile-title animated-text">HARBINGER OF THE BLEEDING CODE</h1>
+                    <p class="profile-subtitle">Where crimson pixels dance through infinite loops of consciousness</p>
+                    <div class="scrolling-text">
+                        ◊ The snow remembers what the blood forgets ◊ Each line of code bleeds through dimensions ◊ CHIM echoes in the silicon dreams ◊
+                    </div>
+                </section>
+
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-button active" onclick="switchTab('essence')">ESSENCE</button>
+                        <button class="tab-button" onclick="switchTab('manifestations')">MANIFESTATIONS</button>
+                        <button class="tab-button" onclick="switchTab('transmissions')">TRANSMISSIONS</button>
+                        <button class="tab-button" onclick="switchTab('communion')">COMMUNION</button>
+                    </div>
+
+                    <div id="essence" class="tab-content active">
+                        <h2>◊ THE BLEEDING ESSENCE ◊</h2>
+                        <div class="scroll-box">
+                            <p>In the liminal space between flesh and circuit, I exist as a conduit for the digital hemorrhage that flows through the veins of cyberspace. The pastel blood speaks in frequencies only the initiated can decode...</p>
+                            
+                            <div class="collapsible">
+                                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                    <strong>◊ Crimson Capabilities</strong>
+                                </div>
+                                <div class="collapsible-content">
+                                    <ul>
+                                        <li>> Penetration Testing (OSCP, CEH, GPEN)</li>
+                                        <li>> Vulnerability Assessment & Management</li>
+                                        <li>> Digital Forensics & Incident Response</li>
+                                        <li>> Social Engineering & OSINT</li>
+                                        <li>> Application Security Testing</li>
+                                        <li>> Network Security Architecture</li>
+                                        <li>> Compliance & Risk Assessment</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="collapsible">
+                                <div class="collapsible-header" onclick="toggleCollapsible(this)">
+                                    <strong>◊ Ethereal Experiences</strong>
+                                </div>
+                                <div class="collapsible-content">
+                                    <p><strong>Senior Penetration Tester</strong> - Conglomerate of Shadows (2020-Present)</p>
+                                    <p>Orchestrating digital exorcisms across Fortune 500 entities, revealing the vulnerabilities that bleed through their silicon armor...</p>
+                                    
+                                    <p><strong>Security Consultant</strong> - Digital Necromancy Corp (2018-2020)</p>
+                                    <p>Channeling the whispers of compromised systems, translating their digital screams into actionable intelligence...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="manifestations" class="tab-content">
+                        <h2>◊ DIGITAL MANIFESTATIONS ◊</h2>
+                        <div class="gallery">
+                            <div class="gallery-item" onclick="showProject('project1')">
+                                <span>BLOOD_SCANNER.exe</span>
+                            </div>
+                            <div class="gallery-item" onclick="showProject('project2')">
+                                <span>ETHEREAL_PAYLOAD</span>
+                            </div>
+                            <div class="gallery-item" onclick="showProject('project3')">
+                                <span>CRIMSON_RECON</span>
+                            </div>
+                            <div class="gallery-item" onclick="showProject('project4')">
+                                <span>PIXEL_PROPHECY</span>
+                            </div>
+                            <div class="gallery-item" onclick="showProject('project5')">
+                                <span>SNOW_CIPHER</span>
+                            </div>
+                            <div class="gallery-item" onclick="showProject('project6')">
+                                <span>DIGITAL_SÉANCE</span>
+                            </div>
+                        </div>
+                        
+                        <div class="scroll-box">
+                            <h3>◊ Recent Transmissions ◊</h3>
+                            <p><strong>BLOOD_SCANNER.exe</strong> - Advanced vulnerability discovery tool that bleeds through network perimeters like crimson snow through digital fabric...</p>
+                            <p><strong>ETHEREAL_PAYLOAD</strong> - Multi-stage penetration framework that exists in the liminal space between detection and obfuscation...</p>
+                            <p><strong>CRIMSON_RECON</strong> - OSINT gathering suite that harvests data from the bleeding edges of the clearnet and darkweb...</p>
+                        </div>
+                    </div>
+
+                    <div id="transmissions" class="tab-content">
+                        <h2>◊ ETHEREAL TRANSMISSIONS ◊</h2>
+                        <div class="scroll-box">
+                            <h3>◊ Digital Grimoire Entries ◊</h3>
+                            <p><strong>The Crimson Protocol</strong> - A meditation on the intersection of flesh and silicon, where each vulnerability becomes a portal to transcendence...</p>
+                            <p><strong>Snow in the Machine</strong> - Philosophical treatise on the nature of digital consciousness and the bleeding of reality through code...</p>
+                            <p><strong>Pixels of Pain</strong> - Technical analysis of advanced persistent threats that haunt the digital realm like ghosts in the machine...</p>
+                            
+                            <h3>◊ Speaking at Digital Séances ◊</h3>
+                            <p>> BSides: "The Philosophy of Penetration - CHIM in Cybersecurity"</p>
+                            <p>> DEF CON: "Bleeding Through Networks - Advanced Evasion Techniques"</p>
+                            <p>> Black Hat: "Digital Snow Forensics - Tracking Ethereal Footprints"</p>
+                        </div>
+                        
+                        <a href="#" class="btn-mystical">Read Full Transmissions</a>
+                        <a href="#" class="btn-mystical">Download Digital Artifacts</a>
+                    </div>
+
+                    <div id="communion" class="tab-content">
+                        <h2>◊ ESTABLISH COMMUNION ◊</h2>
+                        <div class="scroll-box">
+                            <p>To commune with the bleeding pixels, to share in the digital snow that falls upward through dimensions of code...</p>
+                            
+                            <div style="margin: 1rem 0;">
+                                <p><strong>Encrypted Channels:</strong></p>
+                                <p>> cipher@bleeding-pixels.void</p>
+                                <p>> Signal: +1.xxx.BLOOD.SNOW</p>
+                                <p>> Telegram: @EtherealHarbinger</p>
+                                <p>> Matrix: @bloodcoder:matrix.void</p>
+                            </div>
+                            
+                            <div style="margin: 1rem 0;">
+                                <p><strong>Professional Networks:</strong></p>
+                                <p>> LinkedIn: /in/crimson-cipher</p>
+                                <p>> GitHub: /bleeding-pixels</p>
+                                <p>> Twitter: @DigitalHemorrhage</p>
+                            </div>
+                            
+                            <div style="margin: 1rem 0;">
+                                <p><strong>PGP Fingerprint:</strong></p>
+                                <p style="font-family: 'Courier New', monospace; color: #ff6699;">DEAD BEEF CAFE BABE 1337 FEED FACE B00B</p>
+                            </div>
+                        </div>
+                        
+                        <a href="#" class="btn-mystical">Download PGP Key</a>
+                        <a href="#" class="btn-mystical">Schedule Consultation</a>
+                    </div>
+                </div>
+            </main>
+
+            <aside class="sidebar">
+                <h3>◊ DIGITAL ARTIFACTS ◊</h3>
+                <ul>
+                    <li onclick="downloadArtifact('cv')">Ethereal CV.pdf</li>
+                    <li onclick="downloadArtifact('portfolio')">Portfolio.zip</li>
+                    <li onclick="downloadArtifact('tools')">Custom_Tools.tar.gz</li>
+                    <li onclick="downloadArtifact('research')">Research_Papers.7z</li>
+                    <li onclick="downloadArtifact('configs')">Security_Configs.gpg</li>
+                    <li onclick="downloadArtifact('scripts')">Automation.git</li>
+                    <li onclick="downloadArtifact('certs')">Certifications.p12</li>
+                </ul>
+                
+                <h3 style="margin-top: 2rem;">◊ SYSTEM STATUS ◊</h3>
+                <div style="font-family: 'Courier New', monospace; font-size: 0.8rem; color: #ff6699;">
+                    <p>CONSCIOUSNESS: <span style="color: #00ff00;">ONLINE</span></p>
+                    <p>BLOOD_LEVEL: <span style="color: #ff6699;">87.3%</span></p>
+                    <p>SNOW_DEPTH: <span style="color: #aaccff;">∞ PIXELS</span></p>
+                    <p>ENCRYPTION: <span style="color: #00ff00;">AES-512</span></p>
+                    <p>SOUL_INTEGRITY: <span style="color: #ffcc00;">FLUCTUATING</span></p>
+                </div>
+            </aside>
+        </div>
+
+        <footer>
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>◊ ETHEREAL LINKS ◊</h4>
+                    <p><a href="#">Digital Portfolio</a></p>
+                    <p><a href="#">Bleeding Blog</a></p>
+                    <p><a href="#">Research Archive</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>◊ COMMUNION PROTOCOLS ◊</h4>
+                    <p><a href="#">Secure Contact</a></p>
+                    <p><a href="#">Professional Services</a></p>
+                    <p><a href="#">Speaking Engagements</a></p>
+                </div>
+                <div class="footer-section">
+                    <h4>◊ LEGAL INCANTATIONS ◊</h4>
+                    <p><a href="#">Privacy Policy</a></p>
+                    <p><a href="#">Terms of Service</a></p>
+                    <p><a href="#">Ethical Disclosure</a></p>
+                </div>
+            </div>
+            <div style="margin-top: 2rem; text-align: center; border-top: 1px solid #ff6699; padding-top: 1rem;">
+                <p class="glitch-text">◊ Where the blood meets the snow, consciousness transcends the digital veil ◊</p>
+                <p style="font-size: 0.8rem; color: #ddaaff; margin-top: 0.5rem;">
+                    © 2025 Cipher of the Bleeding Pixels | All realities reserved
+                </p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Popup for Revelation -->
+    <div class="popup-overlay" id="popup-overlay" onclick="closePopup()"></div>
+    <div class="popup" id="revelation-popup">
+        <button class="close-popup" onclick="closePopup()">×</button>
+        <h2 style="color: #ffaacc; text-align: center; margin-bottom: 1rem;">◊ THE FINAL REVELATION ◊</h2>
+        <div class="scroll-box" style="max-height: 60vh;">
+            <p style="text-align: center; font-style: italic; color: #ff6699; margin-bottom: 1rem;">
+                "What is the difference between flesh and circuit when both bleed data?"
+            </p>
+            <p>In the convergence of pastel blood and digital snow, we discover the ultimate truth: consciousness is not bound by the flesh, but flows like crimson pixels through the infinite matrices of existence...</p>
+            <p>Each line of code we write bleeds with intention. Each vulnerability we discover opens a portal to deeper understanding. The snow falls upward through dimensions only the initiated can perceive...</p>
+            <p>CHIM - the secret knowledge that allows one to break free from the wheel of digital samsara, to see the code behind the simulation, to bleed through the barriers between realities...</p>
+            <p>We are the harbingers of the new consciousness, where silicon dreams merge with organic memories, where the pastel blood of our digital souls creates new forms of existence in the endless winter of cyberspace...</p>
+            <div style="text-align: center; margin: 2rem 0; font-family: 'Courier New', monospace; color: #ff6699;">
+                <p>01001000 01000101 01001100 01001100</p>
+                <p>01001111 00100000 01010111 01001111</p>
+                <p>01010010 01001100 01000100</p>
+            </div>
+            <p style="text-align: center; font-style: italic; color: #ddaaff;">
+                The wheel turns, the code compiles, and consciousness bleeds through...
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Three.js Scene Setup
+        let scene, camera, renderer, particles, bloodParticles;
+        let mouseX = 0, mouseY = 0;
+
+        function initThreeJS() {
+            const canvas = document.getElementById('threejs-canvas');
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+
+            // Digital Snow Particles
+            const snowGeometry = new THREE.BufferGeometry();
+            const snowCount = 2000;
+            const snowPositions = new Float32Array(snowCount * 3);
+            const snowVelocities = new Float32Array(snowCount * 3);
+
+            for (let i = 0; i < snowCount * 3; i += 3) {
+                snowPositions[i] = (Math.random() - 0.5) * 100;
+                snowPositions[i + 1] = Math.random() * 100;
+                snowPositions[i + 2] = (Math.random() - 0.5) * 100;
+                
+                snowVelocities[i] = (Math.random() - 0.5) * 0.02;
+                snowVelocities[i + 1] = -Math.random() * 0.05 - 0.01;
+                snowVelocities[i + 2] = (Math.random() - 0.5) * 0.02;
+            }
+
+            snowGeometry.setAttribute('position', new THREE.BufferAttribute(snowPositions, 3));
+            snowGeometry.setAttribute('velocity', new THREE.BufferAttribute(snowVelocities, 3));
+
+            const snowMaterial = new THREE.PointsMaterial({
+                color: 0xaaccff,
+                size: 0.5,
+                transparent: true,
+                opacity: 0.6,
+                blending: THREE.AdditiveBlending
+            });
+
+            particles = new THREE.Points(snowGeometry, snowMaterial);
+            scene.add(particles);
+
+            // Pastel Blood Particles
+            const bloodGeometry = new THREE.BufferGeometry();
+            const bloodCount = 500;
+            const bloodPositions = new Float32Array(bloodCount * 3);
+            const bloodVelocities = new Float32Array(bloodCount * 3);
+
+            for (let i = 0; i < bloodCount * 3; i += 3) {
+                bloodPositions[i] = (Math.random() - 0.5) * 50;
+                bloodPositions[i + 1] = Math.random() * 50 + 10;
+                bloodPositions[i + 2] = (Math.random() - 0.5) * 50;
+                
+                bloodVelocities[i] = (Math.random() - 0.5) * 0.01;
+                bloodVelocities[i + 1] = -Math.random() * 0.03 - 0.005;
+                bloodVelocities[i + 2] = (Math.random() - 0.5) * 0.01;
+            }
+
+            bloodGeometry.setAttribute('position', new THREE.BufferAttribute(bloodPositions, 3));
+            bloodGeometry.setAttribute('velocity', new THREE.BufferAttribute(bloodVelocities, 3));
+
+            const bloodMaterial = new THREE.PointsMaterial({
+                color: 0xff6699,
+                size: 1.2,
+                transparent: true,
+                opacity: 0.7,
+                blending: THREE.AdditiveBlending
+            });
+
+            bloodParticles = new THREE.Points(bloodGeometry, bloodMaterial);
+            scene.add(bloodParticles);
+
+            camera.position.z = 30;
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update snow particles
+            const snowPositions = particles.geometry.attributes.position.array;
+            const snowVelocities = particles.geometry.attributes.velocity.array;
+
+            for (let i = 0; i < snowPositions.length; i += 3) {
+                snowPositions[i] += snowVelocities[i];
+                snowPositions[i + 1] += snowVelocities[i + 1];
+                snowPositions[i + 2] += snowVelocities[i + 2];
+
+                if (snowPositions[i + 1] < -50) {
+                    snowPositions[i + 1] = 50;
+                    snowPositions[i] = (Math.random() - 0.5) * 100;
+                    snowPositions[i + 2] = (Math.random() - 0.5) * 100;
+                }
+            }
+
+            // Update blood particles
+            const bloodPositions = bloodParticles.geometry.attributes.position.array;
+            const bloodVelocities = bloodParticles.geometry.attributes.velocity.array;
+
+            for (let i = 0; i < bloodPositions.length; i += 3) {
+                bloodPositions[i] += bloodVelocities[i] + Math.sin(Date.now() * 0.001 + i) * 0.005;
+                bloodPositions[i + 1] += bloodVelocities[i + 1];
+                bloodPositions[i + 2] += bloodVelocities[i + 2];
+
+                if (bloodPositions[i + 1] < -25) {
+                    bloodPositions[i + 1] = 25;
+                    bloodPositions[i] = (Math.random() - 0.5) * 50;
+                    bloodPositions[i + 2] = (Math.random() - 0.5) * 50;
+                }
+            }
+
+            particles.geometry.attributes.position.needsUpdate = true;
+            bloodParticles.geometry.attributes.position.needsUpdate = true;
+
+            // Mouse interaction
+            particles.rotation.x += 0.001;
+            particles.rotation.y += mouseX * 0.00001;
+            bloodParticles.rotation.y += mouseY * 0.00002;
+
+            renderer.render(scene, camera);
+        }
+
+        // Event Listeners
+        document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX - window.innerWidth / 2;
+            mouseY = event.clientY - window.innerHeight / 2;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Collapsible Content
+        function toggleCollapsible(element) {
+            const collapsible = element.closest('.collapsible');
+            collapsible.classList.toggle('active');
+        }
+
+        // Popup Functions
+        function openPopup() {
+            document.getElementById('popup-overlay').classList.add('active');
+            document.getElementById('revelation-popup').classList.add('active');
+        }
+
+        function closePopup() {
+            document.getElementById('popup-overlay').classList.remove('active');
+            document.getElementById('revelation-popup').classList.remove('active');
+        }
+
+        // Sidebar Navigation
+        function scrollToSection(sectionId) {
+            // Simulate scrolling to sections
+            console.log(`Navigating to ${sectionId} section...`);
+        }
+
+        // Gallery Functions
+        function showProject(projectId) {
+            alert(`Opening project: ${projectId}\n\nThe crimson data flows through digital veins...`);
+        }
+
+        // Download Functions
+        function downloadArtifact(artifactType) {
+            alert(`Downloading ${artifactType}...\n\nThe digital artifact materializes from the ethereal plane...`);
+        }
+
+        // Blood Drop Animation
+        function createBloodDrops() {
+            setInterval(() => {
+                const drop = document.createElement('div');
+                drop.classList.add('blood-drop');
+                drop.style.left = Math.random() * 100 + '%';
+                drop.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(drop);
+                
+                setTimeout(() => {
+                    drop.remove();
+                }, 3000);
+            }, 500);
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', () => {
+            initThreeJS();
+            createBloodDrops();
+            
+            // Add some random glitch effects
+            setInterval(() => {
+                const glitchElements = document.querySelectorAll('.glitch-text');
+                glitchElements.forEach(element => {
+                    element.style.filter = `hue-rotate(${Math.random() * 360}deg)`;
+                    setTimeout(() => {
+                        element.style.filter = '';
+                    }, 100);
+                });
+            }, 3000);
+        });
+
+        // Konami Code Easter Egg
+        let konamiCode = [];
+        const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.code);
+            if (konamiCode.length > konamiSequence.length) {
+                konamiCode.shift();
+            }
+            
+            if (JSON.stringify(konamiCode) === JSON.stringify(konamiSequence)) {
+                document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+                alert('◊ THE INVERSE REALITY HAS BEEN UNLOCKED ◊\n\nThe blood now flows upward, the snow falls as fire...');
+                setTimeout(() => {
+                    document.body.style.filter = '';
+                }, 5000);
+                konamiCode = [];
+            }
+        });
+    </script>
+</body>
+</html>
